@@ -30,12 +30,12 @@ lookUp key = fromJust . lookup key
 -- 3 marks
 vars :: Formula -> [Id]
 vars = sort . nub . varsy
-
-varsy :: Formula -> [Id]
-varsy (Var x) = [x]
-varsy (Not f) =  vars f
-varsy (And f1 f2) = vars f1 ++ vars f2
-varsy (Or f1 f2) = vars f1 ++ vars f2
+    where
+        varsy :: Formula -> [Id]
+        varsy (Var x) = [x]
+        varsy (Not f) =  vars f
+        varsy (And f1 f2) = vars f1 ++ vars f2
+        varsy (Or f1 f2) = vars f1 ++ vars f2
 
 -- 1 mark
 idMap :: Formula -> IdMap
@@ -57,14 +57,20 @@ distribute a b
 
 -- 4 marks
 toNNF :: Formula -> NNF
-toNNF (Not (And f1 f2)) = Or (Not $ toNNF f1) (Not $ toNNF f2)
-toNNF (Not (Or f1 f2)) = And (Not $ toNNF f1) (Not $ toNNF f2)
-toNNF _ = id
+toNNF (Not (And f1 f2)) = Or (toNNF $ Not f1) (toNNF $ Not f2)
+toNNF (Not (Or f1 f2)) = And (toNNF $ Not f1) (toNNF $ Not f2)
+toNNF (Not (Not f)) = toNNF f
+toNNF (And f1 f2) = And (toNNF f1) (toNNF f2)
+toNNF (Or f1 f2) = Or (toNNF f1) (toNNF f2)
+toNNF f = f
+
 
 -- 3 marks
 toCNF :: Formula -> CNF
-toCNF 
-  = undefined
+toCNF f = case (toNNF f) of
+    Or f1 f2 -> distribute (toCNF f1) (toCNF f2)
+    And f1 f2 -> And (toCNF f1) (toCNF f2)
+    _ -> f
 
 -- 4 marks
 flatten :: CNF -> CNFRep
