@@ -28,6 +28,7 @@ lookUp :: Eq a => a -> [(a, b)] -> b
 lookUp key = fromJust . lookup key
 
 -- 3 marks
+--Gives the list of variables in a formula
 vars :: Formula -> [Id]
 vars = sort . nub . varsy
     where
@@ -38,6 +39,7 @@ vars = sort . nub . varsy
         varsy (Or f1 f2) = vars f1 ++ vars f2
 
 -- 1 mark
+--Numbers the list of variables, list of tuples
 idMap :: Formula -> IdMap
 idMap f = zip (vars f) [1..]
 
@@ -66,6 +68,7 @@ toNNF f = f
 
 
 -- 3 marks
+--CNF is essentially canonical maxterm
 toCNF :: Formula -> CNF
 toCNF f = case (toNNF f) of
     Or f1 f2 -> distribute (toCNF f1) (toCNF f2)
@@ -73,17 +76,24 @@ toCNF f = case (toNNF f) of
     _ -> f
 
 -- 4 marks
-flatten :: CNF -> CNFRep
-flatten 
-  = undefined
+--Takes a CNF formula and flattens it
+flatten :: CNF -> CNFRep --[[Int]]
+flatten cnf = flatteny cnf indexes
+    where
+        indexes = idMap cnf
+        flatteny :: CNF -> IdMap -> CNFRep
+        flatteny cnf indexes = case cnf of
+            And f1 f2 -> flatteny f1 indexes ++ flatteny f2 indexes
+            Or f1 f2 -> [concat (flatteny f1 indexes ++ flatteny f2 indexes)]
+            Not f -> map (map negate) $ flatteny f indexes
+            Var x -> [[lookUp x indexes]]
 
 --------------------------------------------------------------------------
 -- Part III
 
 -- 5 marks
 propUnits :: CNFRep -> (CNFRep, [Int])
-propUnits 
-  = undefined
+propUnits = undefined
 
 -- 4 marks
 dp :: CNFRep -> [[Int]]
