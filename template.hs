@@ -148,29 +148,19 @@ unit propagation via propUnits, noting, as in the example above, that if the giv
 -}
 -- Now can brute force by taking first literal and assume to be true
 -- Also, assume it to be false, call two recursive things of the dp algorithm
--- Same process for this
+-- Base case when propped list empty, here we want to return singleton list containing list of unit clauses propagated
 -- May have new singletons, obvious what to do next
 -- If you get an empty list that is success, so return list of list of unit clauses propagated
 -- Also concatenate unit clauses taken to be true before these recursive calls
 -- Returns lists of lists of satisfying assignments
 dp :: CNFRep -> [[Int]]
-dp cnf = (prop_trues ++ trues ++ falses) : (dp ass_true ++ dp ass_false)
-    where
-        (propped_list, prop_trues) = propUnits cnf
-        take_first_lit :: [[a]] -> [a]
-        take_first_lit [[]] = []
-        take_first_lit ((y:ys):xs) = [y]
-        first_lit = take_first_lit propped_list
-
-        (ass_true, trues, ass_false, falses) =
-            if first_lit == [] 
-                then
-                    ([], [], [], [])
-                else
-                    let
-                        (ass_true, trues) = propUnits (first_lit : cnf)
-                        (ass_false, falses) = propUnits (map negate first_lit : cnf)
-                    in (ass_true, trues, ass_false, falses)
+let (propped_list, unit_clauses) = propUnits cnf in
+dp cnf = case propped_list of
+             [] -> ???
+             _ -> dp
+         where
+             take_first_lit :: [[a]] -> [a]
+             take_first_lit ((y:ys):xs) = [y]
 
 --------------------------------------------------------------------------
 -- Part IV
