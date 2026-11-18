@@ -129,7 +129,7 @@ clauses then select one of them to propagate. The others will be picked up by re
 
 --propUnits just the singleton part, not the adding singletons
 propUnits :: CNFRep -> (CNFRep, [Int]) --CNF after propagating and the list of inital unit clauses
-propUnits cnf = (assume_list (find_singletons cnf) cnf, [0])
+propUnits cnf = (assume_list next_singletons next, singletons ++ next_singletons)
     where
         isSingleton :: [a] -> Bool
         isSingleton [_] = True
@@ -142,7 +142,12 @@ propUnits cnf = (assume_list (find_singletons cnf) cnf, [0])
         assume cnf literal = map (filter (/=(negate literal))) (filter (/=[literal]) cnf)
 
         assume_list :: [Int] -> CNFRep -> CNFRep
+        assume_list [] cnf = cnf
         assume_list singletons cnf = foldl' assume cnf singletons
+
+        singletons = find_singletons cnf
+        next = assume_list singletons cnf
+        next_singletons = find_singletons next
 
 -- 4 marks
 dp :: CNFRep -> [[Int]]
