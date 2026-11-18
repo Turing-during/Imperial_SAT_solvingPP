@@ -73,7 +73,7 @@ toCNF :: Formula -> CNF
 toCNF f = case (toNNF f) of
     Or f1 f2 -> distribute (toCNF f1) (toCNF f2)
     And f1 f2 -> And (toCNF f1) (toCNF f2)
-    _ -> f
+    nnf -> nnf
 
 -- 4 marks
 --Takes a CNF formula and flattens it
@@ -105,6 +105,27 @@ flatten cnf = flatteny cnf indexes
 
 --propUnits just the singleton part, not the adding singletons
 propUnits :: CNFRep -> (CNFRep, [Int]) --CNF after propagating and the list of inital unit clauses
+propUnits cnf = propUnitsLoop cnf []
+    where
+        isSingleton :: [a] -> Bool
+        isSingleton [_] = True
+        isSingleton _ = False
+
+        find_singletons :: CNFRep -> [Int]
+        find_singletons = concat . (filter isSingleton)
+
+        assume :: Int -> CNFRep -> CNFRep
+        assume literal cnf = map (filter (/=(negate literal))) (filter (not . elem literal) cnf)
+
+        propUnitsLoop :: CNFRep -> [Int] -> (CNFRep, [Int])
+        propUnitsLoop cnf acc_units =
+            let unit_literals = find_singletons cnf
+            in case unit_literals of
+                [] -> (cnf, acc_units)
+                (unit:_) ->
+                    let ass_list = assume unit cnf
+                    in propUnitsLoop ass_list (unit : acc_units)
+{-
 propUnits cnf = (assume_list next_singletons next, singletons ++ next_singletons)
     where
         isSingleton :: [a] -> Bool
@@ -123,29 +144,17 @@ propUnits cnf = (assume_list next_singletons next, singletons ++ next_singletons
 
         singletons = find_singletons cnf
         next = assume_list singletons cnf
-        next_singletons = find_singletons next
+        next_singletons = find_singletons nextpropUnits cnf = (assume_list next_singletons next, singletons ++ next_singletons)
+    where
+        isSingleton :: [a] -> Bool
+        isSingleton [_] = True
+        isSingleton _ = False
+
+        find_singletons :: CNFRep -> [Int]
+        find_singletons = concat . (filter isSingleton)
+-}
 
 -- 4 marks
-{-
-To complete the DP algorithm, use the function propUnits to define a function dp ::
-CNFRep -> [[Int]] that will return the list of all satisfying assignments for the given
-CNFRep, as described in Section 4.
-For example,
-*SAT> dp cnf1Rep
-[[1,2,3]]
-*SAT> dp cnf2Rep
-[[4,-1,2,3,-7,6],[4,-1,-2,5,3,-7,6]]
-*SAT> dp cnf3Rep
-[]
-The order of the elements in the resulting lists and sublists is unimportant. Note that
-cnf1Rep has only a single satisfying assignment and cnfRep3 has none. As described in
-Section 4.2, cnf2Rep has three solutions, but two of them are implicitly encoded in the
-assignment [4,-1,2,3,-7,6] where the variable corresponding to the number 5, i.e. e here,
-can assume either the value F alse or T rue.
-Hint: The termination conditions (Section 4.2) can be based on inspection of the CNF after
-unit propagation via propUnits, noting, as in the example above, that if the given CNF is
-[] then the CNF in the pair returned by propUnits will also be [].
--}
 -- Now can brute force by taking first literal and assume to be true
 -- Also, assume it to be false, call two recursive things of the dp algorithm
 -- Base case when propped list empty, here we want to return singleton list containing list of unit clauses propagated
@@ -154,6 +163,19 @@ unit propagation via propUnits, noting, as in the example above, that if the giv
 -- Also concatenate unit clauses taken to be true before these recursive calls
 -- Returns lists of lists of satisfying assignments
 dp :: CNFRep -> [[Int]]
+dp cnf =
+    let (propped_list, units) = propUnits cnf
+    in if any null propped_list
+           then []
+           else case propped_list of
+                    [] -> [units]
+                    _ ->
+                        let first_lit = head $ head propped_list
+                        in map (units++)
+                               (dp ([first_lit] : propped_list) ++
+                               dp ([negate first_lit] : propped_list)
+                               )
+{-
 let (propped_list, unit_clauses) = propUnits cnf in
 dp cnf = case propped_list of
              [] -> ???
@@ -161,7 +183,7 @@ dp cnf = case propped_list of
          where
              take_first_lit :: [[a]] -> [a]
              take_first_lit ((y:ys):xs) = [y]
-
+-}
 --------------------------------------------------------------------------
 -- Part IV
 
