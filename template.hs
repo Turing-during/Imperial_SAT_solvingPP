@@ -162,6 +162,8 @@ propUnits cnf = (assume_list next_singletons next, singletons ++ next_singletons
 -- If you get an empty list that is success, so return list of list of unit clauses propagated
 -- Also concatenate unit clauses taken to be true before these recursive calls
 -- Returns lists of lists of satisfying assignments
+
+-- Could've used guards and been way neater
 dp :: CNFRep -> [[Int]]
 dp cnf =
     let (propped_list, units) = propUnits cnf
