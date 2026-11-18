@@ -92,30 +92,6 @@ flatten cnf = flatteny cnf indexes
 -- Part III
 
 -- 5 marks
-{-
-By implementing the rules described in Section 4.1, and illustrated in Section 4.2, define a
-function propUnits :: CNFRep -> (CNFRep, [Int]) that will take the flattened version
-of a CNF and return a pair comprising:
-• The CNFRep that results from propagating all unit clauses in the original CNFRep
-• The list of all unit clauses propagated as part of this process
-By definition, the CNFRep returned in the result pair should contain no unit clauses.
-Note that a unit clause in a CNFRep is a singleton list comprising just an integer, which may
-be positive or negative, depending on whether or not the corresponding variable is negated,
-as described in Section 2.2. For example:
-*SAT> propUnits []
-([],[])
-*SAT> cnf1Rep
-[[1,2,3],[1,2,-3],[1,-2,3],[1,-2,-3],[-1,2,3],[-1,2,-3],[-1,-2,3]]
-*SAT> propUnits cnf1Rep
-([[1,2,3],[1,2,-3],[1,-2,3],[1,-2,-3],[-1,2,3],[-1,2,-3],[-1,-2,3]],[])
-*SAT> cnf2Rep
-[[-1,-4],[2,1,5],[3,-2],[4],[3,-5],[-3,-7],[1,7,6],[-3,6]]
-*SAT> propUnits cnf2Rep
-([[2,5],[3,-2],[3,-5],[-3,-7],[7,6],[-3,6]],[4,-1])
-The order of the elements in the resulting lists and sublists is unimportant.
-Hint: It’s easier if you propagate one unit clause at a time, i.e. if a CNF has multiple unit
-clauses then select one of them to propagate. The others will be picked up by recursion.
--}
 -- Check for a singlton list
 -- It must be true, so can remove from the ands
 -- And can remove the not of it from the ors
@@ -150,9 +126,51 @@ propUnits cnf = (assume_list next_singletons next, singletons ++ next_singletons
         next_singletons = find_singletons next
 
 -- 4 marks
+{-
+To complete the DP algorithm, use the function propUnits to define a function dp ::
+CNFRep -> [[Int]] that will return the list of all satisfying assignments for the given
+CNFRep, as described in Section 4.
+For example,
+*SAT> dp cnf1Rep
+[[1,2,3]]
+*SAT> dp cnf2Rep
+[[4,-1,2,3,-7,6],[4,-1,-2,5,3,-7,6]]
+*SAT> dp cnf3Rep
+[]
+The order of the elements in the resulting lists and sublists is unimportant. Note that
+cnf1Rep has only a single satisfying assignment and cnfRep3 has none. As described in
+Section 4.2, cnf2Rep has three solutions, but two of them are implicitly encoded in the
+assignment [4,-1,2,3,-7,6] where the variable corresponding to the number 5, i.e. e here,
+can assume either the value F alse or T rue.
+Hint: The termination conditions (Section 4.2) can be based on inspection of the CNF after
+unit propagation via propUnits, noting, as in the example above, that if the given CNF is
+[] then the CNF in the pair returned by propUnits will also be [].
+-}
+-- Now can brute force by taking first literal and assume to be true
+-- Also, assume it to be false, call two recursive things of the dp algorithm
+-- Same process for this
+-- May have new singletons, obvious what to do next
+-- If you get an empty list that is success, so return list of list of unit clauses propagated
+-- Also concatenate unit clauses taken to be true before these recursive calls
+-- Returns lists of lists of satisfying assignments
 dp :: CNFRep -> [[Int]]
-dp 
-  = undefined
+dp cnf = (prop_trues ++ trues ++ falses) : (dp ass_true ++ dp ass_false)
+    where
+        (propped_list, prop_trues) = propUnits cnf
+        take_first_lit :: [[a]] -> [a]
+        take_first_lit [[]] = []
+        take_first_lit ((y:ys):xs) = [y]
+        first_lit = take_first_lit propped_list
+
+        (ass_true, trues, ass_false, falses) =
+            if first_lit == [] 
+                then
+                    ([], [], [], [])
+                else
+                    let
+                        (ass_true, trues) = propUnits (first_lit : cnf)
+                        (ass_false, falses) = propUnits (map negate first_lit : cnf)
+                    in (ass_true, trues, ass_false, falses)
 
 --------------------------------------------------------------------------
 -- Part IV
